@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # Prefect API server
+  prefect-server:
+    image: prefecthq/prefect:3.2.15.dev8-python3.12
+    ports:
+      - "4200:4200"
+    environment:
+      - PREFECT_UI_API_URL=http://localhost:4200/api
+      - PREFECT_API_URL=http://localhost:4200/api
+      - PREFECT_SERVER_API_HOST=0.0.0.0
+    volumes:
+      - prefect-data:/root/.prefect
+    command: prefect server start
+
+  # Prefect agent for running flows
+  prefect-agent:
+    image: prefecthq/prefect:3.2.15.dev8-python3.12
+    depends_on:
+    - prefect-server
+    environment:
+      - PREFECT_API_URL=http://prefect-server:4200/api
+    command: prefect agent start -q default
+    volumes:
+      - ./flows:/opt/prefect/flows
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4200/api/health"]
+      interval: 2s
+      timeout: 2s
+      retries: 3
+
+  # MCP Prefect server using FastMCP
+  mcp-prefect:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+    - prefect-agent
+    environment:
+      - PREFECT_API_URL=http://prefect-server:4200/api
+      - PREFECT_API_KEY=
+      - MCP_TRANSPORT=sse
+      - MCP_PORT=8000
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "8000:8000"
+    command: >
+      bash -c "python -m pip install -e . && 
+              echo 'Starting MCP server...' &&
+              python -m mcp_prefect.main --transport sse"
+
+volumes:
+  prefect-data:

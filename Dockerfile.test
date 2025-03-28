@@ -1,0 +1,15 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Install dependencies
+RUN apt-get update && \
+    apt-get install -y curl netcat-openbsd jq && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy test scripts
+COPY test_scripts/ /app/test_scripts/
+RUN chmod +x /app/test_scripts/*.sh
+
+CMD ["/app/test_scripts/test_mcp_prefect.sh"]

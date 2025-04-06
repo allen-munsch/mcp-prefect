@@ -60,3 +60,22 @@ To add a new API type:
 2. Create a new module in `src/prefect/`
 3. Update `main.py` to include the new API type
 
+
+Example usage:
+
+```
+{
+  "mcpServers": {
+    "mcp-prefect": {
+      "command": "mcp-prefect",
+      "args": [
+        "--transport", "sse"
+      ],
+      "env": {
+        "PYTHONPATH": "/path/to/your/project/directory"
+      },
+      "cwd": "/path/to/your/project/directory"
+    }
+  }
+}
+```

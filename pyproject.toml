@@ -141,9 +141,6 @@ dependencies = [
     "mypy>=1.0.0",
 ]
 
-[tool.hatch.metadata]
-allow-direct-references = true
-
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests}"
 lint = "black src tests && isort src tests"

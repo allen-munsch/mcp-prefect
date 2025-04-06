@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
+import ast
 import asyncio
 import json
 import logging
 import os
+import re
 import sys
 from functools import partial
 from typing import Any, Dict, List, Optional, Union
@@ -21,15 +23,19 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("prefect-mcp-test")
 
 
+def write_error(msg):
+    logger.error(f"\n\n#################\n{msg}")
+
+
 async def message_handler(
     message: Any,
 ) -> None:
     """Handle incoming messages from the server."""
     if isinstance(message, Exception):
-        logger.error(f"Error: {message}")
+        write_error(f"Error: {message}")
         return
     
-    logger.info(f"Received message type: {type(message).__name__}")
+    logger.info(f"\nReceived message type: {type(message).__name__}\n")
 
 
 async def test_prefect_mcp():
@@ -86,7 +92,7 @@ async def test_prefect_mcp():
                 logger.info("All tests completed successfully")
                 
     except Exception as e:
-        logger.error(f"Test failed: {e}")
+        write_error(f"Test failed: {e}")
         raise
 
 
@@ -100,7 +106,7 @@ async def test_health(session: ClientSession, tool_map: Dict[str, Any]):
                 if content.type == "text":
                     logger.info(f"Health check result: {content.text}")
         except Exception as e:
-            logger.error(f"Error calling get_health: {e}")
+            write_error(f"Error calling get_health: {e}")
 
 
 async def test_flows(session: ClientSession, tool_map: Dict[str, Any]):
@@ -120,7 +126,7 @@ async def test_flows(session: ClientSession, tool_map: Dict[str, Any]):
                 if content.type == "text":
                     logger.info(f"Filtered flows result: {content.text[:200]}...")
         except Exception as e:
-            logger.error(f"Error calling get_flows: {e}")
+            write_error(f"Error calling get_flows: {e}")
 
     # Test get_flow if available
     if "get_flow" in tool_map:
@@ -148,7 +154,7 @@ async def test_flows(session: ClientSession, tool_map: Dict[str, Any]):
             else:
                 logger.info("Skipping get_flow test - no flows available")
         except Exception as e:
-            logger.error(f"Error calling get_flow: {e}")
+            write_error(f"Error calling get_flow: {e}")
 
 
 async def test_deployments(session: ClientSession, tool_map: Dict[str, Any]):
@@ -168,7 +174,7 @@ async def test_deployments(session: ClientSession, tool_map: Dict[str, Any]):
                 if content.type == "text":
                     logger.info(f"Filtered deployments result: {content.text[:200]}...")
         except Exception as e:
-            logger.error(f"Error calling get_deployments: {e}")
+            write_error(f"Error calling get_deployments: {e}")
 
     # Test get_deployment if available
     if "get_deployment" in tool_map:
@@ -196,7 +202,7 @@ async def test_deployments(session: ClientSession, tool_map: Dict[str, Any]):
             else:
                 logger.info("Skipping get_deployment test - no deployments available")
         except Exception as e:
-            logger.error(f"Error calling get_deployment: {e}")
+            write_error(f"Error calling get_deployment: {e}")
 
 
 async def test_flow_runs(session: ClientSession, tool_map: Dict[str, Any]):
@@ -209,7 +215,7 @@ async def test_flow_runs(session: ClientSession, tool_map: Dict[str, Any]):
                 if content.type == "text":
                     logger.info(f"Flow runs result: {content.text[:200]}...")
         except Exception as e:
-            logger.error(f"Error calling get_flow_runs: {e}")
+            write_error(f"Error calling get_flow_runs: {e}")
 
     # Test get_flow_run if available and we have flow runs
     if "get_flow_run" in tool_map:
@@ -237,7 +243,7 @@ async def test_flow_runs(session: ClientSession, tool_map: Dict[str, Any]):
             else:
                 logger.info("Skipping get_flow_run test - no flow runs available")
         except Exception as e:
-            logger.error(f"Error calling get_flow_run: {e}")
+            write_error(f"Error calling get_flow_run: {e}")
 
 
 async def test_task_runs(session: ClientSession, tool_map: Dict[str, Any]):
@@ -250,7 +256,7 @@ async def test_task_runs(session: ClientSession, tool_map: Dict[str, Any]):
                 if content.type == "text":
                     logger.info(f"Task runs result: {content.text[:200]}...")
         except Exception as e:
-            logger.error(f"Error calling get_task_runs: {e}")
+            write_error(f"Error calling get_task_runs: {e}")
 
 
 async def test_workspaces(session: ClientSession, tool_map: Dict[str, Any]):
@@ -263,7 +269,7 @@ async def test_workspaces(session: ClientSession, tool_map: Dict[str, Any]):
                 if content.type == "text":
                     logger.info(f"Workspaces response: {content.text}")
         except Exception as e:
-            logger.error(f"Error calling get_workspaces: {e}")
+            write_error(f"Error calling get_workspaces: {e}")
 
 
 async def test_blocks(session: ClientSession, tool_map: Dict[str, Any]):
@@ -276,7 +282,7 @@ async def test_blocks(session: ClientSession, tool_map: Dict[str, Any]):
                 if content.type == "text":
                     logger.info(f"Block types result: {content.text[:200]}...")
         except Exception as e:
-            logger.error(f"Error calling get_block_types: {e}")
+            write_error(f"Error calling get_block_types: {e}")
 
 
 async def test_variables(session: ClientSession, tool_map: Dict[str, Any]):
@@ -289,7 +295,7 @@ async def test_variables(session: ClientSession, tool_map: Dict[str, Any]):
                 if content.type == "text":
                     logger.info(f"Variables result: {content.text[:200]}...")
         except Exception as e:
-            logger.error(f"Error calling get_variables: {e}")
+            write_error(f"Error calling get_variables: {e}")
             
     # Test create_variable and delete_variable if available
     if "create_variable" in tool_map and "delete_variable" in tool_map:
@@ -316,7 +322,7 @@ async def test_variables(session: ClientSession, tool_map: Dict[str, Any]):
                 if content.type == "text":
                     logger.info(f"Delete variable result: {content.text}")
         except Exception as e:
-            logger.error(f"Error testing variable creation/deletion: {e}")
+            write_error(f"Error testing variable creation/deletion: {e}")
 
 
 async def test_work_queues(session: ClientSession, tool_map: Dict[str, Any]):
@@ -329,7 +335,7 @@ async def test_work_queues(session: ClientSession, tool_map: Dict[str, Any]):
                 if content.type == "text":
                     logger.info(f"Work queues result: {content.text[:200]}...")
         except Exception as e:
-            logger.error(f"Error calling get_work_queues: {e}")
+            write_error(f"Error calling get_work_queues: {e}")
             
     # Test create_work_queue and delete_work_queue if available
     if "create_work_queue" in tool_map and "delete_work_queue" in tool_map:
@@ -348,11 +354,15 @@ async def test_work_queues(session: ClientSession, tool_map: Dict[str, Any]):
                 if content.type == "text":
                     logger.info(f"Create work queue result: {content.text[:200]}...")
                     try:
-                        queue_data = eval(content.text)
-                        work_queue_id = queue_data["id"]
-                    except:
-                        pass
-            
+                        # Extract the UUID using regex pattern
+                        uuid_match = re.search(r"'id': UUID\('([0-9a-f-]+)'\)", content.text)
+                        if uuid_match:
+                            work_queue_id = uuid_match.group(1)
+                            logger.info(f"Extracted work queue ID: {work_queue_id}")
+                        else:
+                            logger.warning("Could not find work queue ID in response")
+                    except Exception as e:
+                        logger.error(f"Error extracting work queue ID: {e}")
             if work_queue_id:
                 # Now try to delete it
                 logger.info(f"Testing delete_work_queue for ID: {work_queue_id}...")
@@ -364,7 +374,7 @@ async def test_work_queues(session: ClientSession, tool_map: Dict[str, Any]):
             else:
                 logger.info("Skipping delete_work_queue test - couldn't get work queue ID")
         except Exception as e:
-            logger.error(f"Error testing work queue creation/deletion: {e}")
+            write_error(f"Error testing work queue creation/deletion: {e}")
 
 
 if __name__ == "__main__":

@@ -45,24 +45,33 @@ async def get_flows(
     """
     try:
         async with get_client() as client:
-            # Build filter parameters
-            filters = {}
-            if flow_name:
-                filters["name"] = {"like_": f"%{flow_name}%"}
-            if tags:
-                filters["tags"] = {"all_": tags}
-            if created_after:
-                filters["created"] = {"ge_": created_after}
-            if created_before:
-                if "created" in filters:
-                    filters["created"]["le_"] = created_before
-                else:
-                    filters["created"] = {"le_": created_before}
-                    
+            # Build flow filter
+            flow_filter = None
+            if any([flow_name, tags, created_after, created_before]):
+                from prefect.client.schemas.filters import FlowFilter
+                
+                filter_dict = {}
+                if flow_name:
+                    filter_dict["name"] = {"like_": f"%{flow_name}%"}
+                if tags:
+                    filter_dict["tags"] = {"all_": tags}
+                
+                # Handle date filters
+                if created_after or created_before:
+                    created_filters = {}
+                    if created_after:
+                        created_filters["ge_"] = created_after
+                    if created_before:
+                        created_filters["le_"] = created_before
+                    filter_dict["created"] = created_filters
+                
+                flow_filter = FlowFilter(**filter_dict)
+            
+            # Query using proper filter object
             flows = await client.read_flows(
+                flow_filter=flow_filter,
                 limit=limit,
                 offset=offset,
-                **filters
             )
             
             # Handle empty results
@@ -72,14 +81,13 @@ async def get_flows(
             # Add UI links to each flow
             flows_with_links = []
             for flow in flows:
-                flow_dict = flow.dict()
+                flow_dict = flow.model_dump()
                 flow_dict["ui_url"] = get_flow_url(str(flow.id))
                 flows_with_links.append(flow_dict)
                 
             flows_result = {"flows": flows_with_links}
             
-            return [types.TextContent(type="text", text=str(flows_result))]
-        
+            return [types.TextContent(type="text", text=str(flows_result))]        
     except Exception as e:
         error_message = f"Error fetching flows: {str(e)}"
         return [types.TextContent(type="text", text=error_message)]
@@ -111,7 +119,7 @@ async def get_flow(
             flow = await client.read_flow(flow_uuid)
             
             # Add UI link
-            flow_dict = flow.dict()
+            flow_dict = flow.model_dump()
             flow_dict["ui_url"] = get_flow_url(flow_id)
             
             return [types.TextContent(type="text", text=str(flow_dict))]

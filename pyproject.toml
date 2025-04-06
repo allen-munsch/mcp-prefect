@@ -67,7 +67,7 @@ dependencies = [
     "pathspec==0.12.1",
     "pendulum==3.0.0",
     "pip==24.2",
-    "prefect==3.2.15.dev8",
+    "prefect==3.3.3",
     "prometheus_client==0.21.1",
     "pycparser==2.22",
     "pydantic-extra-types==2.10.3",
@@ -121,6 +121,7 @@ mcp-prefect = "mcp_prefect.main:main"
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.1",
     "black>=23.0.0",
     "isort>=5.0.0",
     "mypy>=1.0.0",
@@ -140,10 +141,22 @@ dependencies = [
     "mypy>=1.0.0",
 ]
 
+[tool.hatch.metadata]
+allow-direct-references = true
+
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests}"
 lint = "black src tests && isort src tests"
 typecheck = "mypy src"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+log_cli = true
+log_cli_level = "INFO"
 
 [tool.black]
 line-length = 100

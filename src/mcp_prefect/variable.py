@@ -39,12 +39,13 @@ async def get_variables(
         
         variables = await client.read_variables(
             limit=limit,
-            offset=offset,
-            **filters
+            # prefect 3.3.3 doesn't have these
+            # offset=offset,
+            # **filters
         )
         
         variables_result = {
-            "variables": [variable.dict() for variable in variables]
+            "variables": [variable.model_dump() for variable in variables]
         }
         
         return [types.TextContent(type="text", text=str(variables_result))]
@@ -65,12 +66,12 @@ async def get_variable(
     async with get_client() as client:
         variable = await client.read_variable(name)
         
-        return [types.TextContent(type="text", text=str(variable.dict()))]
+        return [types.TextContent(type="text", text=str(variable.model_dump()))]
 
 
 async def create_variable(
     name: str,
-    value: str,
+    value: Any,  # Change type to Any to support different value types
     tags: Optional[List[str]] = None,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
     """
@@ -78,27 +79,31 @@ async def create_variable(
     
     Args:
         name: The variable name
-        value: The variable value
+        value: The variable value (can be string, dict, list, etc.)
         tags: Optional tags
         
     Returns:
         Details of the created variable
     """
-    async with get_client() as client:
-        # Parse value if it's a valid JSON
-        try:
-            parsed_value = json.loads(value)
-        except json.JSONDecodeError:
-            # If it's not valid JSON, use the string as-is
-            parsed_value = value
-        
-        variable = await client.create_variable(
-            name=name,
-            value=parsed_value,
-            tags=tags or [],
-        )
-        
-        return [types.TextContent(type="text", text=str(variable.dict()))]
+    try:
+        async with get_client() as client:
+            # Import the VariableCreate model
+            from prefect.client.schemas.actions import VariableCreate
+            
+            # Create the proper variable object
+            variable_create = VariableCreate(
+                name=name,
+                value=value,  # Pass value directly, no parsing needed
+                tags=tags or []
+            )
+            
+            # Use the variable object with the client
+            variable = await client.create_variable(variable=variable_create)
+            
+            variable_result = {"variable": variable.model_dump()}
+            return [types.TextContent(type="text", text=str(variable_result))]
+    except Exception as e:
+        return [types.TextContent(type="text", text=str({"error": str(e)}))]
 
 
 async def update_variable(
@@ -137,7 +142,7 @@ async def update_variable(
             **update_data
         )
         
-        return [types.TextContent(type="text", text=str(updated_variable.dict()))]
+        return [types.TextContent(type="text", text=str(updated_variable.model_dump()))]
 
 
 async def delete_variable(
@@ -153,6 +158,6 @@ async def delete_variable(
         Confirmation message
     """
     async with get_client() as client:
-        await client.delete_variable(name)
+        await client.delete_variable_by_name(name)
         
         return [types.TextContent(type="text", text=f"Variable '{name}' deleted successfully.")]

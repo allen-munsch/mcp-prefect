@@ -38,13 +38,14 @@ async def get_block_types(
             filters["slug"] = {"like_": f"%{slug}%"}
         
         block_types = await client.read_block_types(
-            limit=limit,
-            offset=offset,
-            **filters
+            # 
+            # limit=limit,
+            # offset=offset,
+            # **filters
         )
         
         block_types_result = {
-            "block_types": [block_type.dict() for block_type in block_types]
+            "block_types": [block_type.model_dump() for block_type in block_types]
         }
         
         return [types.TextContent(type="text", text=str(block_types_result))]
@@ -65,7 +66,7 @@ async def get_block_type(
     async with get_client() as client:
         block_type = await client.read_block_type_by_slug(slug)
         
-        return [types.TextContent(type="text", text=str(block_type.dict()))]
+        return [types.TextContent(type="text", text=str(block_type.model_dump()))]
 
 
 async def get_block_documents(
@@ -101,7 +102,7 @@ async def get_block_documents(
         )
         
         block_documents_result = {
-            "block_documents": [block_doc.dict() for block_doc in block_documents]
+            "block_documents": [block_doc.model_dump() for block_doc in block_documents]
         }
         
         return [types.TextContent(type="text", text=str(block_documents_result))]
@@ -122,7 +123,7 @@ async def get_block_document(
     async with get_client() as client:
         block_document = await client.read_block_document(UUID(block_document_id))
         
-        return [types.TextContent(type="text", text=str(block_document.dict()))]
+        return [types.TextContent(type="text", text=str(block_document.model_dump()))]
 
 
 async def delete_block_document(

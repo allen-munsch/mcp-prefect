@@ -50,39 +50,55 @@ async def get_deployments(
     Returns:
         A list of deployments with their details
     """
-    async with get_client() as client:
-    
-        # Build filter parameters
-        filters = {}
-        if flow_name:
-            filters["flow_name"] = {"like_": f"%{flow_name}%"}
-        if name:
-            filters["name"] = {"like_": f"%{name}%"}
-        if tags:
-            filters["tags"] = {"all_": tags}
-        if is_schedule_active is not None:
-            filters["is_schedule_active"] = {"eq_": is_schedule_active}
-        if work_queue_name:
-            filters["work_queue_name"] = {"eq_": work_queue_name}
-        
-        deployments = await client.read_deployments(
-            limit=limit,
-            offset=offset,
-            **filters
-        )
-        
-        # Add UI links to each deployment
-        deployments_result = {
-            "deployments": [
-                {
-                    **deployment.dict(),
-                    "ui_url": get_deployment_url(str(deployment.id))
-                }
-                for deployment in deployments
-            ]
-        }
-        
-        return [types.TextContent(type="text", text=str(deployments_result))]
+    try:
+        async with get_client() as client:
+            # Build deployment filter
+            deployment_filter = None
+            if any([name, tags, is_schedule_active, work_queue_name]):
+                from prefect.client.schemas.filters import DeploymentFilter
+                
+                filter_dict = {}
+                if name:
+                    filter_dict["name"] = {"like_": f"%{name}%"}
+                if tags:
+                    filter_dict["tags"] = {"all_": tags}
+                if is_schedule_active is not None:
+                    filter_dict["is_schedule_active"] = {"eq_": is_schedule_active}
+                if work_queue_name:
+                    filter_dict["work_queue_name"] = {"eq_": work_queue_name}
+                
+                deployment_filter = DeploymentFilter(**filter_dict)
+            
+            # Build flow filter if flow_name is specified
+            flow_filter = None
+            if flow_name:
+                from prefect.client.schemas.filters import FlowFilter
+                
+                flow_filter = FlowFilter(name={"like_": f"%{flow_name}%"})
+            
+            # Query using proper filter objects
+            deployments = await client.read_deployments(
+                deployment_filter=deployment_filter,
+                flow_filter=flow_filter,
+                limit=limit,
+                offset=offset,
+            )
+            
+            # Add UI links to each deployment
+            deployments_result = {
+                "deployments": [
+                    {
+                        **deployment.model_dump(),
+                        "ui_url": get_deployment_url(str(deployment.id))
+                    }
+                    for deployment in deployments
+                ]
+            }
+            
+            return [types.TextContent(type="text", text=str(deployments_result))]
+    except Exception as e:
+        # Add proper error handling
+        return [types.TextContent(type="text", text=str({"error": str(e)}))]
 
 
 async def get_deployment(
@@ -101,7 +117,7 @@ async def get_deployment(
         deployment = await client.read_deployment(UUID(deployment_id))
         
         # Add UI link
-        deployment_dict = deployment.dict()
+        deployment_dict = deployment.model_dump()
         deployment_dict["ui_url"] = get_deployment_url(deployment_id)
         
         return [types.TextContent(type="text", text=str(deployment_dict))]
@@ -139,7 +155,7 @@ async def create_flow_run_from_deployment(
         )
         
         # Add URL
-        flow_run_dict = flow_run.dict()
+        flow_run_dict = flow_run.model_dump()
         flow_run_dict["ui_url"] = PREFECT_API_URL.replace("/api", "") + f"/flow-runs/{flow_run.id}"
         
         return [types.TextContent(type="text", text=str(flow_run_dict))]
@@ -213,7 +229,7 @@ async def update_deployment(
         )
         
         # Add UI link
-        updated_deployment_dict = updated_deployment.dict()
+        updated_deployment_dict = updated_deployment.model_dump()
         updated_deployment_dict["ui_url"] = get_deployment_url(deployment_id)
         
         return [types.TextContent(type="text", text=str(updated_deployment_dict))]
@@ -234,7 +250,7 @@ async def get_deployment_schedule(
     async with get_client() as client:
         schedule = await client.read_deployment_schedule(UUID(deployment_id))
         
-        return [types.TextContent(type="text", text=str(schedule.dict()))]
+        return [types.TextContent(type="text", text=str(schedule.model_dump()))]
 
 
 async def set_deployment_schedule(
@@ -293,7 +309,7 @@ async def set_deployment_schedule(
                 text="Must specify either cron or interval_seconds to set a schedule"
             )]
         
-        return [types.TextContent(type="text", text=str(schedule.dict()))]
+        return [types.TextContent(type="text", text=str(schedule.model_dump()))]
 
 
 async def pause_deployment_schedule(

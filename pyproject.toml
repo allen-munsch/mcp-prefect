@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcp-prefect"
-version = "0.1.0"
+version = "0.1.1"
 description = "MCP Server for Prefect"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -34,7 +34,7 @@ dependencies = [
     "Deprecated==1.2.18",
     "docker==7.1.0",
     "exceptiongroup==1.2.2",
-    "fastmcp==0.4.1",
+    "fastmcp @ git+https://github.com/jlowin/fastmcp.git@654397bf0aa75bdddbbedd8c5bec440492e1147b",
     "fsspec==2025.3.0",
     "graphviz==0.20.3",
     "greenlet==3.1.1",
@@ -128,6 +128,9 @@ dev = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mcp_prefect"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.envs.default]
 dependencies = [

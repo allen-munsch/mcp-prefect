@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SERVER="http://localhost:8000"
+SERVER="http://127.0.0.1:8000"
 
 # Create initialize request
 INIT_REQUEST=$(cat <<EOF
@@ -21,4 +21,4 @@ EOF
 ENCODED_REQUEST=$(echo "$INIT_REQUEST" | jq -r @uri)
 
 echo "Testing SSE connection with initialize..."
-curl -N -H "Accept: text/event-stream" "${SERVER}/sse?request=${ENCODED_REQUEST}"
+curl -NL -H "Accept: text/event-stream" "${SERVER}/sse?request=${ENCODED_REQUEST}"

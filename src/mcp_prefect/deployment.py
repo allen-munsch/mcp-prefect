@@ -1,24 +1,11 @@
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 import mcp.types as types
 from prefect import get_client
 
 from .envs import PREFECT_API_URL
-
-
-def get_all_functions() -> list[tuple[Callable, str, str]]:
-    return [
-        (get_deployments, "get_deployments", "Get all deployments"),
-        (get_deployment, "get_deployment", "Get a deployment by ID"),
-        (create_flow_run_from_deployment, "create_flow_run_from_deployment", "Create a flow run from a deployment"),
-        (delete_deployment, "delete_deployment", "Delete a deployment"),
-        (update_deployment, "update_deployment", "Update a deployment"),
-        (get_deployment_schedule, "get_deployment_schedule", "Get a deployment's schedule"),
-        (set_deployment_schedule, "set_deployment_schedule", "Set a deployment's schedule"),
-        (pause_deployment_schedule, "pause_deployment_schedule", "Pause a deployment's schedule"),
-        (resume_deployment_schedule, "resume_deployment_schedule", "Resume a deployment's schedule"),
-    ]
+from .server import mcp
 
 
 def get_deployment_url(deployment_id: str) -> str:
@@ -26,6 +13,7 @@ def get_deployment_url(deployment_id: str) -> str:
     return f"{base_url}/deployments/{deployment_id}"
 
 
+@mcp.tool
 async def get_deployments(
     limit: Optional[int] = None,
     offset: Optional[int] = None,
@@ -101,6 +89,7 @@ async def get_deployments(
         return [types.TextContent(type="text", text=str({"error": str(e)}))]
 
 
+@mcp.tool
 async def get_deployment(
     deployment_id: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
@@ -123,6 +112,7 @@ async def get_deployment(
         return [types.TextContent(type="text", text=str(deployment_dict))]
 
 
+@mcp.tool
 async def create_flow_run_from_deployment(
     deployment_id: str,
     parameters: Optional[Dict[str, Any]] = None,
@@ -161,6 +151,7 @@ async def create_flow_run_from_deployment(
         return [types.TextContent(type="text", text=str(flow_run_dict))]
 
 
+@mcp.tool
 async def delete_deployment(
     deployment_id: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
@@ -179,6 +170,7 @@ async def delete_deployment(
         return [types.TextContent(type="text", text=f"Deployment '{deployment_id}' deleted successfully.")]
 
 
+@mcp.tool
 async def update_deployment(
     deployment_id: str,
     name: Optional[str] = None,
@@ -235,6 +227,7 @@ async def update_deployment(
         return [types.TextContent(type="text", text=str(updated_deployment_dict))]
 
 
+@mcp.tool
 async def get_deployment_schedule(
     deployment_id: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
@@ -253,6 +246,7 @@ async def get_deployment_schedule(
         return [types.TextContent(type="text", text=str(schedule.model_dump()))]
 
 
+@mcp.tool
 async def set_deployment_schedule(
     deployment_id: str,
     cron: Optional[str] = None,
@@ -312,6 +306,7 @@ async def set_deployment_schedule(
         return [types.TextContent(type="text", text=str(schedule.model_dump()))]
 
 
+@mcp.tool
 async def pause_deployment_schedule(
     deployment_id: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
@@ -330,6 +325,7 @@ async def pause_deployment_schedule(
         return [types.TextContent(type="text", text=f"Schedule for deployment '{deployment_id}' paused successfully.")]
 
 
+@mcp.tool
 async def resume_deployment_schedule(
     deployment_id: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:

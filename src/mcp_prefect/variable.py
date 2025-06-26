@@ -1,20 +1,13 @@
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 import json
 
 import mcp.types as types
 from prefect import get_client
 
-
-def get_all_functions() -> list[tuple[Callable, str, str]]:
-    return [
-        (get_variables, "get_variables", "Get all variables"),
-        (get_variable, "get_variable", "Get a variable by name"),
-        (create_variable, "create_variable", "Create a variable"),
-        (update_variable, "update_variable", "Update a variable"),
-        (delete_variable, "delete_variable", "Delete a variable"),
-    ]
+from .server import mcp
 
 
+@mcp.tool
 async def get_variables(
     limit: Optional[int] = None,
     offset: Optional[int] = None,
@@ -51,6 +44,7 @@ async def get_variables(
         return [types.TextContent(type="text", text=str(variables_result))]
 
 
+@mcp.tool
 async def get_variable(
     name: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
@@ -69,6 +63,7 @@ async def get_variable(
         return [types.TextContent(type="text", text=str(variable.model_dump()))]
 
 
+@mcp.tool
 async def create_variable(
     name: str,
     value: Any,  # Change type to Any to support different value types
@@ -106,6 +101,7 @@ async def create_variable(
         return [types.TextContent(type="text", text=str({"error": str(e)}))]
 
 
+@mcp.tool
 async def update_variable(
     name: str,
     value: Optional[str] = None,
@@ -145,6 +141,7 @@ async def update_variable(
         return [types.TextContent(type="text", text=str(updated_variable.model_dump()))]
 
 
+@mcp.tool
 async def delete_variable(
     name: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:

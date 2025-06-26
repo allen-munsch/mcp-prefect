@@ -1,20 +1,13 @@
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 import mcp.types as types
 from prefect import get_client
 
-
-def get_all_functions() -> list[tuple[Callable, str, str]]:
-    return [
-        (get_block_types, "get_block_types", "Get all block types"),
-        (get_block_type, "get_block_type", "Get a block type by slug"),
-        (get_block_documents, "get_block_documents", "Get block documents by block type"),
-        (get_block_document, "get_block_document", "Get a block document by ID"),
-        (delete_block_document, "delete_block_document", "Delete a block document"),
-    ]
+from .server import mcp
 
 
+@mcp.tool
 async def get_block_types(
     limit: Optional[int] = None,
     offset: Optional[int] = None,
@@ -51,6 +44,7 @@ async def get_block_types(
         return [types.TextContent(type="text", text=str(block_types_result))]
 
 
+@mcp.tool
 async def get_block_type(
     slug: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
@@ -69,6 +63,7 @@ async def get_block_type(
         return [types.TextContent(type="text", text=str(block_type.model_dump()))]
 
 
+@mcp.tool
 async def get_block_documents(
     block_type_slug: str,
     limit: Optional[int] = None,
@@ -108,6 +103,7 @@ async def get_block_documents(
         return [types.TextContent(type="text", text=str(block_documents_result))]
 
 
+@mcp.tool
 async def get_block_document(
     block_document_id: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
@@ -126,6 +122,7 @@ async def get_block_document(
         return [types.TextContent(type="text", text=str(block_document.model_dump()))]
 
 
+@mcp.tool
 async def delete_block_document(
     block_document_id: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:

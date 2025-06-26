@@ -1,18 +1,11 @@
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 import mcp.types as types
 from prefect import get_client
 
 from .envs import PREFECT_API_URL
-
-
-def get_all_functions() -> list[tuple[Callable, str, str]]:
-    return [
-        (get_flows, "get_flows", "Get all flows"),
-        (get_flow, "get_flow", "Get a flow by ID"),
-        (delete_flow, "delete_flow", "Delete a flow by ID"),
-    ]
+from .server import mcp
 
 
 def get_flow_url(flow_id: str) -> str:
@@ -21,6 +14,7 @@ def get_flow_url(flow_id: str) -> str:
     return f"{base_url}/flows/{flow_id}"
 
 
+@mcp.tool
 async def get_flows(
     limit: Optional[int] = None,
     offset: Optional[int] = None,
@@ -93,6 +87,7 @@ async def get_flows(
         return [types.TextContent(type="text", text=error_message)]
 
 
+@mcp.tool
 async def get_flow(
     flow_id: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
@@ -129,6 +124,7 @@ async def get_flow(
         return [types.TextContent(type="text", text=error_message)]
 
 
+@mcp.tool
 async def delete_flow(
     flow_id: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:

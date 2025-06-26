@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 import mcp.types as types
@@ -6,15 +6,7 @@ from prefect import get_client
 from prefect.states import Cancelled, Completed, Failed, Pending, Running, Scheduled
 
 from .envs import PREFECT_API_URL
-
-
-def get_all_functions() -> list[tuple[Callable, str, str]]:
-    return [
-        (get_task_runs, "get_task_runs", "Get all task runs"),
-        (get_task_run, "get_task_run", "Get a task run by ID"),
-        (get_task_runs_by_flow_run, "get_task_runs_by_flow_run", "Get task runs for a specific flow run"),
-        (set_task_run_state, "set_task_run_state", "Set a task run's state"),
-    ]
+from .server import mcp
 
 
 def get_task_run_url(task_run_id: str) -> str:
@@ -22,6 +14,7 @@ def get_task_run_url(task_run_id: str) -> str:
     return f"{base_url}/task-runs/{task_run_id}"
 
 
+@mcp.tool
 async def get_task_runs(
     limit: Optional[int] = None,
     offset: Optional[int] = None,
@@ -87,6 +80,7 @@ async def get_task_runs(
         return [types.TextContent(type="text", text=str(task_runs_result))]
 
 
+@mcp.tool
 async def get_task_run(
     task_run_id: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
@@ -109,6 +103,7 @@ async def get_task_run(
         return [types.TextContent(type="text", text=str(task_run_dict))]
 
 
+@mcp.tool
 async def get_task_runs_by_flow_run(
     flow_run_id: str,
     limit: Optional[int] = None,
@@ -153,6 +148,7 @@ async def get_task_runs_by_flow_run(
         return [types.TextContent(type="text", text=str(task_runs_result))]
 
 
+@mcp.tool
 async def set_task_run_state(
     task_run_id: str,
     state: str,

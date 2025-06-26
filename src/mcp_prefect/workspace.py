@@ -1,19 +1,13 @@
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 import mcp.types as types
 from prefect import get_client
 
-
-def get_all_functions() -> list[tuple[Callable, str, str]]:
-    return [
-        (get_workspaces, "get_workspaces", "Get all workspaces"),
-        (get_current_workspace, "get_current_workspace", "Get current workspace"),
-        (get_workspace, "get_workspace", "Get a workspace by ID"),
-        (get_workspace_by_handle, "get_workspace_by_handle", "Get a workspace by handle"),
-    ]
+from .server import mcp
 
 
+@mcp.tool
 async def get_workspaces(
     limit: Optional[int] = None,
     offset: Optional[int] = None,
@@ -48,6 +42,7 @@ async def get_workspaces(
         )]
 
 
+@mcp.tool
 async def get_current_workspace() -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
     """
     Get the current workspace.
@@ -68,6 +63,7 @@ async def get_current_workspace() -> List[Union[types.TextContent, types.ImageCo
         )]
 
 
+@mcp.tool
 async def get_workspace(
     workspace_id: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
@@ -93,6 +89,7 @@ async def get_workspace(
         )]
 
 
+@mcp.tool
 async def get_workspace_by_handle(
     account_handle: str,
     workspace_handle: str,

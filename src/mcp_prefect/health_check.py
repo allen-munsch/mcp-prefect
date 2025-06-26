@@ -1,15 +1,12 @@
-from typing import Callable, List, Union
+from typing import List, Union
 
 import mcp.types as types
 from prefect import get_client
 
-
-def get_all_functions() -> list[tuple[Callable, str, str]]:
-    return [
-        (get_health, "get_health", "Get health status"),
-    ]
+from .server import mcp
 
 
+@mcp.tool
 async def get_health() -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
     """
     Get health status of the Prefect server.

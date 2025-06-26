@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 import mcp.types as types
@@ -6,18 +6,7 @@ from prefect import get_client
 from prefect.states import Cancelled, Completed, Failed, Pending, Running, Scheduled
 
 from .envs import PREFECT_API_URL
-
-
-def get_all_functions() -> list[tuple[Callable, str, str]]:
-    return [
-        (get_flow_runs, "get_flow_runs", "Get all flow runs"),
-        (get_flow_run, "get_flow_run", "Get a flow run by ID"),
-        (get_flow_runs_by_flow, "get_flow_runs_by_flow", "Get flow runs for a specific flow"),
-        (restart_flow_run, "restart_flow_run", "Restart a flow run"),
-        (cancel_flow_run, "cancel_flow_run", "Cancel a flow run"),
-        (delete_flow_run, "delete_flow_run", "Delete a flow run"),
-        (set_flow_run_state, "set_flow_run_state", "Set a flow run's state"),
-    ]
+from .server import mcp
 
 
 def get_flow_run_url(flow_run_id: str) -> str:
@@ -25,6 +14,7 @@ def get_flow_run_url(flow_run_id: str) -> str:
     return f"{base_url}/flow-runs/{flow_run_id}"
 
 
+@mcp.tool
 async def get_flow_runs(
     limit: Optional[int] = None,
     offset: Optional[int] = None,
@@ -94,6 +84,7 @@ async def get_flow_runs(
         return [types.TextContent(type="text", text=str(flow_runs_result))]
 
 
+@mcp.tool
 async def get_flow_run(
     flow_run_id: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
@@ -116,6 +107,7 @@ async def get_flow_run(
         return [types.TextContent(type="text", text=str(flow_run_dict))]
 
 
+@mcp.tool
 async def get_flow_runs_by_flow(
     flow_id: str,
     limit: Optional[int] = None,
@@ -160,6 +152,7 @@ async def get_flow_runs_by_flow(
         return [types.TextContent(type="text", text=str(flow_runs_result))]
 
 
+@mcp.tool
 async def restart_flow_run(
     flow_run_id: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
@@ -182,6 +175,7 @@ async def restart_flow_run(
         return [types.TextContent(type="text", text=str(new_flow_run_dict))]
 
 
+@mcp.tool
 async def cancel_flow_run(
     flow_run_id: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
@@ -203,6 +197,7 @@ async def cancel_flow_run(
         return [types.TextContent(type="text", text=f"Flow run '{flow_run_id}' cancelled successfully.")]
 
 
+@mcp.tool
 async def delete_flow_run(
     flow_run_id: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
@@ -221,6 +216,7 @@ async def delete_flow_run(
         return [types.TextContent(type="text", text=f"Flow run '{flow_run_id}' deleted successfully.")]
 
 
+@mcp.tool
 async def set_flow_run_state(
     flow_run_id: str,
     state: str,

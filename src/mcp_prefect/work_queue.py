@@ -1,23 +1,13 @@
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 import mcp.types as types
 from prefect import get_client
 
-
-def get_all_functions() -> list[tuple[Callable, str, str]]:
-    return [
-        (get_work_queues, "get_work_queues", "Get all work queues"),
-        (get_work_queue, "get_work_queue", "Get a work queue by ID"),
-        (get_work_queue_by_name, "get_work_queue_by_name", "Get a work queue by name"),
-        (create_work_queue, "create_work_queue", "Create a work queue"),
-        (update_work_queue, "update_work_queue", "Update a work queue"),
-        (delete_work_queue, "delete_work_queue", "Delete a work queue"),
-        (pause_work_queue, "pause_work_queue", "Pause a work queue"),
-        (resume_work_queue, "resume_work_queue", "Resume a work queue"),
-    ]
+from .server import mcp
 
 
+@mcp.tool
 async def get_work_queues(
     limit: Optional[int] = None,
     offset: Optional[int] = None,
@@ -57,6 +47,7 @@ async def get_work_queues(
         return [types.TextContent(type="text", text=str(work_queues_result))]
 
 
+@mcp.tool
 async def get_work_queue(
     work_queue_id: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
@@ -75,6 +66,7 @@ async def get_work_queue(
         return [types.TextContent(type="text", text=str(work_queue.dict()))]
 
 
+@mcp.tool
 async def get_work_queue_by_name(
     name: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
@@ -93,6 +85,7 @@ async def get_work_queue_by_name(
         return [types.TextContent(type="text", text=str(work_queue.dict()))]
 
 
+@mcp.tool
 async def create_work_queue(
     name: str,
     description: Optional[str] = None,
@@ -122,6 +115,7 @@ async def create_work_queue(
         return [types.TextContent(type="text", text=str(work_queue.dict()))]
 
 
+@mcp.tool
 async def update_work_queue(
     work_queue_id: str,
     name: Optional[str] = None,
@@ -162,6 +156,7 @@ async def update_work_queue(
         return [types.TextContent(type="text", text=str(work_queue.dict()))]
 
 
+@mcp.tool
 async def delete_work_queue(
     work_queue_id: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
@@ -180,6 +175,7 @@ async def delete_work_queue(
         return [types.TextContent(type="text", text=f"Work queue '{work_queue_id}' deleted successfully.")]
 
 
+@mcp.tool
 async def pause_work_queue(
     work_queue_id: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
@@ -201,6 +197,7 @@ async def pause_work_queue(
         return [types.TextContent(type="text", text=str(work_queue.dict()))]
 
 
+@mcp.tool
 async def resume_work_queue(
     work_queue_id: str,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:

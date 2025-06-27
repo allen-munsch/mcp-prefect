@@ -21,7 +21,7 @@ def extract_id_from_response(response_text: str, key: str = "id"):
         The extracted ID or None if not found
     """
     try:
-        # Extract the UUID using regex pattern
+        # Extract the UUID using regex pattern - handle UUID('...') format
         uuid_match = re.search(rf"'{key}': UUID\('([0-9a-f-]+)'\)", response_text)
         if uuid_match:
             return uuid_match.group(1)
@@ -30,6 +30,18 @@ def extract_id_from_response(response_text: str, key: str = "id"):
         id_match = re.search(rf"'{key}': '([^']+)'", response_text)
         if id_match:
             return id_match.group(1)
+        
+        # Try JSON parsing as fallback
+        try:
+            # Replace single quotes with double quotes for JSON parsing
+            json_text = response_text.replace("'", '"')
+            # Handle UUID objects in the text
+            json_text = re.sub(r'UUID\("([^"]+)"\)', r'"\1"', json_text)
+            parsed = json.loads(json_text)
+            if isinstance(parsed, dict) and key in parsed:
+                return str(parsed[key])
+        except (json.JSONDecodeError, KeyError):
+            pass
             
         return None
     except Exception as e:

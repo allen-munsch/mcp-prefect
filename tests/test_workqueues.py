@@ -59,12 +59,9 @@ async def test_create_and_delete_work_queue():
             for content in create_result.content:
                 if content.type == "text":
                     logger.info(f"Create work queue result: {content.text[:200]}...")
-                    try:
-                        parsed = json.loads(content.text.replace("'", '"'))
-                        if parsed.get("id"):
-                            work_queue_id = parsed["id"]
-                    except (json.JSONDecodeError, KeyError):
-                        pass
+                    # Use the utility function to extract ID
+                    from .utils import extract_id_from_response
+                    work_queue_id = extract_id_from_response(content.text, "id")
                     
                     assert work_queue_id, "Work queue ID not found in response"
             

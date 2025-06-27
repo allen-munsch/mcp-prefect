@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcp-prefect"
-version = "0.2.1"
+version = "0.2.2"
 description = "MCP Server for Prefect"
 readme = "README.md"
 requires-python = ">=3.12"

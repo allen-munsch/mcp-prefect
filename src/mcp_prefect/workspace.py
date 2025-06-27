@@ -11,6 +11,7 @@ from .server import mcp
 async def get_workspaces(
     limit: Optional[int] = None,
     offset: Optional[int] = None,
+    name: Optional[str] = None,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
     """
     Get a list of accessible workspaces.
@@ -18,6 +19,7 @@ async def get_workspaces(
     Args:
         limit: Maximum number of workspaces to return
         offset: Number of workspaces to skip
+        name: Filter workspaces by name (note: filtering may not be supported by all Prefect versions)
         
     Returns:
         A list of workspaces with their details

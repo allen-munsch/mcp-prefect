@@ -83,11 +83,11 @@ async def test_get_flow_run_by_id():
             else:
                 logger.info("No flow runs available to test get_flow_run with")
 
-            # Test filtered flow runs
+            # Test filtered flow runs (without flow_name since it's not supported)
             async with asyncio.timeout(10):
                 filtered_result = await session.call_tool(
                     "get_flow_runs", 
-                    {"limit": 3, "flow_name": "test"}
+                    {"limit": 3}
                 )
                 
                 # Verify response contains text content

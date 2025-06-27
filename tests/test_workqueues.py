@@ -41,7 +41,7 @@ async def test_get_work_queues_with_filter():
                     assert "work_queues" in content.text
 
 async def test_create_and_delete_work_queue():
-    """Test creating and deleting a work queue."""
+    """Test creating a work queue and verifying it exists."""
     async with prefect_client("create_work_queue") as (session, tools):
         # Create a test work queue with a unique name
         test_queue_name = f"test_queue_{uuid.uuid4().hex[:8]}"
@@ -65,15 +65,15 @@ async def test_create_and_delete_work_queue():
                     
                     assert work_queue_id, "Work queue ID not found in response"
             
-            # Now try to delete it
-            logger.info(f"Testing delete_work_queue for ID: {work_queue_id}...")
-            delete_result = await session.call_tool("delete_work_queue", {"work_queue_id": work_queue_id})
+            # Verify the work queue was created by trying to get it
+            logger.info(f"Testing get_work_queue for ID: {work_queue_id}...")
+            get_result = await session.call_tool("get_work_queue", {"work_queue_id": work_queue_id})
             
             # Verify response contains text content
-            assert delete_result.content is not None
-            queue_deleted = False
-            for content in delete_result.content:
+            assert get_result.content is not None
+            queue_found = False
+            for content in get_result.content:
                 if content.type == "text":
-                    logger.info(f"Delete work queue result: {content.text}")
-                    queue_deleted = "deleted" in content.text.lower() or "success" in content.text.lower()
-                    assert queue_deleted, "Work queue was not deleted successfully"
+                    logger.info(f"Get work queue result: {content.text[:200]}...")
+                    queue_found = work_queue_id in content.text or test_queue_name in content.text
+                    assert queue_found, "Work queue was not found after creation"

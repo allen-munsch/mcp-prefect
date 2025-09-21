@@ -1,14 +1,9 @@
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
 from fastmcp import FastMCP
-
+from . import __version__
 # Create the FastMCP server
-mcp = FastMCP("Prefect MCP", 
-              host='0.0.0.0',
-              dependencies=[
-                  "prefect>=3.2.15",
-                  "uvicorn>=0.34.0"
-              ])
+mcp = FastMCP(f"MCP Prefect {__version__}")
 
 @mcp.custom_route("/health", methods=["GET"])
 async def health_check(request: Request) -> Response:

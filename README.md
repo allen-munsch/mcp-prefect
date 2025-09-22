@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/allen-munsch-mcp-prefect-badge.jpg)](https://mseep.ai/app/allen-munsch-mcp-prefect)
+
 # Prefect MCP Server
 
 A Model Context Protocol (MCP) server implementation for [Prefect](https://www.prefect.io/), allowing AI assistants to interact with Prefect through natural language.

@@ -1,6 +1,15 @@
-FROM python:3.12.9-slim
+FROM python:3.14-slim
 
 WORKDIR /app
+
+# Install build dependencies (update package lists first!)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    libpq-dev \
+    libyaml-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install hatch
 RUN pip install --no-cache-dir hatch

@@ -2,13 +2,16 @@
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build]
+include = ["LICENSE"]
+
 [project]
 name = "mcp-prefect"
 version = "0.2.3419"
 description = "MCP Server for Prefect"
 readme = "README.md"
 requires-python = ">=3.12"
-license = { text = "MIT" }
+license = { text = "Apache-2.0" }
 authors = [
     { name = "James Munsch", email = "james.a.munsch@gmail.com" },
 ]

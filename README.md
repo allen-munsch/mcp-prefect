@@ -2,6 +2,10 @@
 
 A Model Context Protocol (MCP) server implementation for [Prefect](https://www.prefect.io/), allowing AI assistants to interact with Prefect through natural language.
 
+<a href="https://glama.ai/mcp/servers/@allen-munsch/mcp-prefect">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@allen-munsch/mcp-prefect/badge" alt="Prefect Server MCP server" />
+</a>
+
 ## Features
 
 This MCP server provides access to the following Prefect APIs:

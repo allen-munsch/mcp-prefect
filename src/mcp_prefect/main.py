@@ -16,7 +16,7 @@ info = log.info
 @click.option(
     "--transport",
     type=click.Choice(["stdio", "http"]),
-    default="stdio",
+    default="http",
     help="Transport type for MCP communication",
 )
 @click.option(
@@ -96,7 +96,7 @@ def main(transport: str, apis: list[str]) -> None:
     info(f'Enabled APIs: {", ".join(apis)}')
 
     host='0.0.0.0'
-    if transport == "sse":
+    if transport == "http":
         mcp.run(transport="http", host=host)
     else:
         mcp.run(transport="stdio")

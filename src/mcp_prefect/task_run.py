@@ -1,9 +1,22 @@
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
+from datetime import datetime
 
 import mcp.types as types
 from prefect import get_client
 from prefect.states import Cancelled, Completed, Failed, Pending, Running, Scheduled
+from prefect.client.schemas.filters import (
+    TaskRunFilter,
+    TaskRunFilterName,
+    TaskRunFilterState,
+    TaskRunFilterStateType,
+    TaskRunFilterStateName,
+    TaskRunFilterTags,
+    TaskRunFilterStartTime,
+    FlowRunFilter,
+    FlowRunFilterId,
+)
+from prefect.client.schemas.sorting import TaskRunSort
 
 from .envs import PREFECT_API_URL
 from .server import mcp
@@ -42,35 +55,70 @@ async def get_task_runs(
         A list of task runs with their details
     """
     async with get_client() as client:
-        # Build filter parameters
-        filters = {}
+        # Build filter objects
+        task_run_filter = None
+        filter_components = []
+        
         if task_name:
-            filters["task_name"] = {"like_": f"%{task_name}%"}
+            filter_components.append(
+                TaskRunFilterName(like_=f"%{task_name}%")
+            )
+        
         if state_type:
-            filters["state"] = {"type": {"any_": [state_type.upper()]}}
+            filter_components.append(
+                TaskRunFilterState(
+                    type=TaskRunFilterStateType(any_=[state_type.upper()])
+                )
+            )
+        
         if state_name:
-            filters["state"] = {"name": {"any_": [state_name]}}
+            filter_components.append(
+                TaskRunFilterState(
+                    name=TaskRunFilterStateName(any_=[state_name])
+                )
+            )
+        
         if tags:
-            filters["tags"] = {"all_": tags}
-        if start_time_after:
-            filters["start_time"] = {"ge_": start_time_after}
-        if start_time_before:
-            if "start_time" in filters:
-                filters["start_time"]["le_"] = start_time_before
-            else:
-                filters["start_time"] = {"le_": start_time_before}
+            filter_components.append(
+                TaskRunFilterTags(all_=tags)
+            )
+        
+        if start_time_after or start_time_before:
+            start_time_filter_args = {}
+            if start_time_after:
+                start_time_filter_args["after_"] = datetime.fromisoformat(start_time_after)
+            if start_time_before:
+                start_time_filter_args["before_"] = datetime.fromisoformat(start_time_before)
+            filter_components.append(
+                TaskRunFilterStartTime(**start_time_filter_args)
+            )
+        
+        # Combine filters if any exist
+        if filter_components:
+            # Create TaskRunFilter with the components
+            # Note: You may need to adjust this based on how TaskRunFilter combines filters
+            task_run_filter = TaskRunFilter()
+            for component in filter_components:
+                if isinstance(component, TaskRunFilterName):
+                    task_run_filter.name = component
+                elif isinstance(component, TaskRunFilterState):
+                    task_run_filter.state = component
+                elif isinstance(component, TaskRunFilterTags):
+                    task_run_filter.tags = component
+                elif isinstance(component, TaskRunFilterStartTime):
+                    task_run_filter.start_time = component
         
         task_runs = await client.read_task_runs(
+            task_run_filter=task_run_filter,
             limit=limit,
-            offset=offset,
-            **filters
+            offset=offset or 0
         )
         
         # Add UI links to each task run
         task_runs_result = {
             "task_runs": [
                 {
-                    **task_run.dict(),
+                    **task_run.model_dump(),
                     "ui_url": get_task_run_url(str(task_run.id))
                 }
                 for task_run in task_runs
@@ -97,7 +145,7 @@ async def get_task_run(
         task_run = await client.read_task_run(UUID(task_run_id))
         
         # Add UI link
-        task_run_dict = task_run.dict()
+        task_run_dict = task_run.model_dump()
         task_run_dict["ui_url"] = get_task_run_url(task_run_id)
         
         return [types.TextContent(type="text", text=str(task_run_dict))]
@@ -123,22 +171,31 @@ async def get_task_runs_by_flow_run(
         A list of task runs for the specified flow run
     """
     async with get_client() as client:
-        # Build filter parameters
-        filters = {"flow_run_id": {"eq_": UUID(flow_run_id)}}
+        # Build filter using new filter objects
+        flow_run_filter = FlowRunFilter(
+            id=FlowRunFilterId(any_=[UUID(flow_run_id)])
+        )
+        
+        task_run_filter = None
         if state_type:
-            filters["state"] = {"type": {"any_": [state_type.upper()]}}
+            task_run_filter = TaskRunFilter(
+                state=TaskRunFilterState(
+                    type=TaskRunFilterStateType(any_=[state_type.upper()])
+                )
+            )
         
         task_runs = await client.read_task_runs(
+            flow_run_filter=flow_run_filter,
+            task_run_filter=task_run_filter,
             limit=limit,
-            offset=offset,
-            **filters
+            offset=offset or 0
         )
         
         # Add UI links to each task run
         task_runs_result = {
             "task_runs": [
                 {
-                    **task_run.dict(),
+                    **task_run.model_dump(),
                     "ui_url": get_task_run_url(str(task_run.id))
                 }
                 for task_run in task_runs
@@ -153,6 +210,7 @@ async def set_task_run_state(
     task_run_id: str,
     state: str,
     message: Optional[str] = None,
+    force: bool = False,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
     """
     Set a task run's state.
@@ -161,6 +219,7 @@ async def set_task_run_state(
         task_run_id: The task run UUID
         state: The new state to set (e.g., "SCHEDULED", "RUNNING", "COMPLETED", "FAILED")
         message: An optional message explaining the state change
+        force: If True, disregard orchestration logic when setting the state
         
     Returns:
         Result of the state change operation
@@ -187,7 +246,8 @@ async def set_task_run_state(
         
         result = await client.set_task_run_state(
             task_run_id=UUID(task_run_id),
-            state=state_obj
+            state=state_obj,
+            force=force
         )
         
-        return [types.TextContent(type="text", text=str(result.dict()))]
+        return [types.TextContent(type="text", text=str(result.model_dump()))]

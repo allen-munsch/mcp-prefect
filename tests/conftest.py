@@ -44,7 +44,7 @@ async def prefect_client(required_tools: List[str] | str):
         tools = await client.list_tools()
         available_tool_names = [tool.name for tool in tools]
 
-        logger.info(f"Available MCP tools: {available_tool_names}")
+        logger.debug(f"Available MCP tools: {available_tool_names}")
 
         # Skip if any required tools are missing
         if not all(tool in available_tool_names for tool in required_tools):

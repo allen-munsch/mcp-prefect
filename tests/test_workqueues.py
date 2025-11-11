@@ -30,7 +30,7 @@ async def test_get_work_queues_with_filter():
         async with asyncio.timeout(10):
             filtered_result = await session.call_tool(
                 "get_work_queues", 
-                {"limit": 3, "queue_name": "test"}
+                {"limit": 3, "name": "test"}  # ✅ Fixed: changed "queue_name" to "name"
             )
             
             # Verify response contains text content
@@ -42,7 +42,7 @@ async def test_get_work_queues_with_filter():
 
 async def test_create_and_delete_work_queue():
     """Test creating a work queue and verifying it exists."""
-    async with prefect_client("create_work_queue") as (session, tools):
+    async with prefect_client(["create_work_queue", "get_work_queue", "delete_work_queue"]) as (session, tools):
         # Create a test work queue with a unique name
         test_queue_name = f"test_queue_{uuid.uuid4().hex[:8]}"
         logger.info(f"Testing create_work_queue with name: {test_queue_name}...")
@@ -77,3 +77,14 @@ async def test_create_and_delete_work_queue():
                     logger.info(f"Get work queue result: {content.text[:200]}...")
                     queue_found = work_queue_id in content.text or test_queue_name in content.text
                     assert queue_found, "Work queue was not found after creation"
+            
+            # Clean up: delete the work queue
+            logger.info(f"Testing delete_work_queue for ID: {work_queue_id}...")
+            delete_result = await session.call_tool("delete_work_queue", {"work_queue_id": work_queue_id})
+            
+            # Verify deletion was successful
+            assert delete_result.content is not None
+            for content in delete_result.content:
+                if content.type == "text":
+                    logger.info(f"Delete work queue result: {content.text}")
+                    assert "deleted successfully" in content.text.lower()

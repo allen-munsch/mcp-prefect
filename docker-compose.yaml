@@ -1,9 +1,7 @@
-version: '3.8'
-
 services:
   # Prefect API server
   prefect-server:
-    image: prefecthq/prefect:3.4.19-python3.12
+    image: prefecthq/prefect:3.6.1-python3.13
     ports:
       - "4200:4200"
     environment:
@@ -16,7 +14,7 @@ services:
 
   # Prefect agent for running flows
   prefect-agent:
-    image: prefecthq/prefect:3.4.19-python3.12
+    image: prefecthq/prefect:3.6.1-python3.13
     depends_on:
     - prefect-server
     environment:

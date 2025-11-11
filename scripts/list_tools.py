@@ -64,10 +64,8 @@ async def list_tools_stdio():
                 # Print summary by category
                 for category, tools in sorted(categories.items()):
                     print(f"\n📂 {category.upper()} ({len(tools)} tools)")
-                    for tool in sorted(tools, key=lambda x: x.name)[:5]:  # Show first 5 per category
+                    for tool in sorted(tools, key=lambda x: x.name):  # Show first 5 per category
                         print(f"  🔧 {tool.name}")
-                    if len(tools) > 5:
-                        print(f"  ... and {len(tools) - 5} more")
                 
                 print(f"\n📊 TOTAL: {len(tools_result.tools)} tools across {len(categories)} categories")
                 

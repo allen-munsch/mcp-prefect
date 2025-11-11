@@ -2,11 +2,16 @@ FROM python:3.14-slim
 
 WORKDIR /app
 
-# Install dependencies
-RUN apt-get update && \
-    apt-get install -y curl netcat-openbsd jq && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# Install build dependencies (update package lists first!)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    netcat-openbsd \
+    jq \ 
+    gcc \
+    g++ \
+    libpq-dev \
+    libyaml-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy test scripts
 COPY test_scripts/ /app/test_scripts/

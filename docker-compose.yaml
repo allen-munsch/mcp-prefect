@@ -1,9 +1,7 @@
-version: '3.8'
-
 services:
   # Prefect API server
   prefect-server:
-    image: prefecthq/prefect:3.4.19-python3.12
+    image: prefecthq/prefect:3.6.1-python3.13
     ports:
       - "4200:4200"
     environment:
@@ -16,7 +14,7 @@ services:
 
   # Prefect agent for running flows
   prefect-agent:
-    image: prefecthq/prefect:3.4.19-python3.12
+    image: prefecthq/prefect:3.6.1-python3.13
     depends_on:
     - prefect-server
     environment:
@@ -40,15 +38,16 @@ services:
     environment:
       - PREFECT_API_URL=http://prefect-server:4200/api
       - PREFECT_API_KEY=
-      - MCP_TRANSPORT=sse
+      - MCP_TRANSPORT=http
       - MCP_PORT=8000
       - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=DEBUG
     ports:
       - "8000:8000"
     command: >
       bash -c "python -m pip install -e . && 
               echo 'Starting MCP server...' &&
-              python -m mcp_prefect.main --transport sse"
+              python -m mcp_prefect.main --transport http"
 
 volumes:
   prefect-data:

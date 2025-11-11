@@ -7,7 +7,7 @@ include = ["LICENSE"]
 
 [project]
 name = "mcp-prefect"
-version = "0.2.3419"
+version = "3.6.1"
 description = "MCP Server for Prefect"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -74,7 +74,7 @@ dependencies = [
     "pathspec>=0.12.1",
     "pendulum>=3.1.0",
     "pip>=24.2",
-    "prefect>=3.4.19",
+    "prefect>=3.6.1",
     "prometheus-client>=0.23.1",
     "pycparser>=2.23",
     "pydantic>=2.11.9",

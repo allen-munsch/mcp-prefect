@@ -3,6 +3,10 @@ from uuid import UUID
 
 import mcp.types as types
 from prefect import get_client
+from prefect.client.schemas.filters import (
+    WorkQueueFilter,
+    WorkQueueFilterName,
+)
 
 from .server import mcp
 
@@ -13,6 +17,7 @@ async def get_work_queues(
     offset: Optional[int] = None,
     name: Optional[str] = None,
     is_paused: Optional[bool] = None,
+    work_pool_name: Optional[str] = None,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
     """
     Get a list of work queues with optional filtering.
@@ -22,26 +27,35 @@ async def get_work_queues(
         offset: Number of work queues to skip
         name: Filter by name
         is_paused: Filter by paused status
+        work_pool_name: Filter by work pool name
         
     Returns:
         A list of work queues with their details
     """
     async with get_client() as client:
-        # Build filter parameters
-        filters = {}
-        if name:
-            filters["name"] = {"like_": f"%{name}%"}
-        if is_paused is not None:
-            filters["is_paused"] = {"eq_": is_paused}
+        # Build filter object
+        work_queue_filter = None
+        
+        if name or is_paused is not None:
+            work_queue_filter = WorkQueueFilter()
+            if name:
+                work_queue_filter.name = WorkQueueFilterName(like_=f"%{name}%")
+            # Note: is_paused filter is not directly available in WorkQueueFilter
+            # We'll handle it by filtering the results after the API call
         
         work_queues = await client.read_work_queues(
+            work_queue_filter=work_queue_filter,
+            work_pool_name=work_pool_name,
             limit=limit,
-            offset=offset,
-            **filters
+            offset=offset or 0
         )
         
+        # Apply is_paused filter manually if needed
+        if is_paused is not None:
+            work_queues = [wq for wq in work_queues if wq.is_paused == is_paused]
+        
         work_queues_result = {
-            "work_queues": [work_queue.dict() for work_queue in work_queues]
+            "work_queues": [work_queue.model_dump() for work_queue in work_queues]
         }
         
         return [types.TextContent(type="text", text=str(work_queues_result))]
@@ -63,26 +77,31 @@ async def get_work_queue(
     async with get_client() as client:
         work_queue = await client.read_work_queue(UUID(work_queue_id))
         
-        return [types.TextContent(type="text", text=str(work_queue.dict()))]
+        return [types.TextContent(type="text", text=str(work_queue.model_dump()))]
 
 
 @mcp.tool
 async def get_work_queue_by_name(
     name: str,
+    work_pool_name: Optional[str] = None,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
     """
     Get a work queue by name.
     
     Args:
         name: The work queue name
+        work_pool_name: Optional work pool name to scope the search
         
     Returns:
         Work queue details
     """
     async with get_client() as client:
-        work_queue = await client.read_work_queue_by_name(name)
+        work_queue = await client.read_work_queue_by_name(
+            name=name,
+            work_pool_name=work_pool_name
+        )
         
-        return [types.TextContent(type="text", text=str(work_queue.dict()))]
+        return [types.TextContent(type="text", text=str(work_queue.model_dump()))]
 
 
 @mcp.tool
@@ -91,6 +110,7 @@ async def create_work_queue(
     description: Optional[str] = None,
     is_paused: Optional[bool] = None,
     concurrency_limit: Optional[int] = None,
+    work_pool_name: Optional[str] = None,
 ) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
     """
     Create a work queue.
@@ -100,6 +120,7 @@ async def create_work_queue(
         description: Optional description
         is_paused: Whether the queue should be paused upon creation
         concurrency_limit: Optional concurrency limit
+        work_pool_name: Optional work pool name to create the queue in
         
     Returns:
         Details of the created work queue
@@ -110,9 +131,10 @@ async def create_work_queue(
             description=description,
             is_paused=is_paused,
             concurrency_limit=concurrency_limit,
+            work_pool_name=work_pool_name,
         )
         
-        return [types.TextContent(type="text", text=str(work_queue.dict()))]
+        return [types.TextContent(type="text", text=str(work_queue.model_dump()))]
 
 
 @mcp.tool
@@ -148,12 +170,14 @@ async def update_work_queue(
         if concurrency_limit is not None:
             update_data["concurrency_limit"] = concurrency_limit
         
-        work_queue = await client.update_work_queue(
+        await client.update_work_queue(
             id=UUID(work_queue_id),
             **update_data
         )
         
-        return [types.TextContent(type="text", text=str(work_queue.dict()))]
+        # Read the updated work queue to return its details
+        updated_work_queue = await client.read_work_queue(UUID(work_queue_id))
+        return [types.TextContent(type="text", text=str(updated_work_queue.model_dump()))]
 
 
 @mcp.tool
@@ -170,7 +194,8 @@ async def delete_work_queue(
         Confirmation message
     """
     async with get_client() as client:
-        await client.delete_work_queue(UUID(work_queue_id))
+        # Correct method name is delete_work_queue_by_id
+        await client.delete_work_queue_by_id(UUID(work_queue_id))
         
         return [types.TextContent(type="text", text=f"Work queue '{work_queue_id}' deleted successfully.")]
 
@@ -189,12 +214,14 @@ async def pause_work_queue(
         Details of the updated work queue
     """
     async with get_client() as client:
-        work_queue = await client.update_work_queue(
+        await client.update_work_queue(
             id=UUID(work_queue_id),
             is_paused=True
         )
         
-        return [types.TextContent(type="text", text=str(work_queue.dict()))]
+        # Read the updated work queue to return its details
+        updated_work_queue = await client.read_work_queue(UUID(work_queue_id))
+        return [types.TextContent(type="text", text=str(updated_work_queue.model_dump()))]
 
 
 @mcp.tool
@@ -211,9 +238,39 @@ async def resume_work_queue(
         Details of the updated work queue
     """
     async with get_client() as client:
-        work_queue = await client.update_work_queue(
+        await client.update_work_queue(
             id=UUID(work_queue_id),
             is_paused=False
         )
         
-        return [types.TextContent(type="text", text=str(work_queue.dict()))]
+        # Read the updated work queue to return its details
+        updated_work_queue = await client.read_work_queue(UUID(work_queue_id))
+        return [types.TextContent(type="text", text=str(updated_work_queue.model_dump()))]
+
+
+@mcp.tool
+async def get_work_queue_runs(
+    work_queue_id: str,
+    limit: Optional[int] = None,
+) -> List[Union[types.TextContent, types.ImageContent, types.EmbeddedResource]]:
+    """
+    Get flow runs for a specific work queue.
+    
+    Args:
+        work_queue_id: The work queue UUID
+        limit: Maximum number of flow runs to return
+        
+    Returns:
+        A list of flow runs in the work queue
+    """
+    async with get_client() as client:
+        flow_runs = await client.get_runs_in_work_queue(
+            id=UUID(work_queue_id),
+            limit=limit or 10
+        )
+        
+        flow_runs_result = {
+            "flow_runs": [flow_run.model_dump() for flow_run in flow_runs]
+        }
+        
+        return [types.TextContent(type="text", text=str(flow_runs_result))]

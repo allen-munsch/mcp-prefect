@@ -69,7 +69,7 @@ Example usage:
     "mcp-prefect": {
       "command": "mcp-prefect",
       "args": [
-        "--transport", "sse"
+        "--transport", "http"
       ],
       "env": {
         "PYTHONPATH": "/path/to/your/project/directory"

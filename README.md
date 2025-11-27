@@ -1,3 +1,10 @@
+# Deprecated 27-Nov-2025
+
+> I've personally moved my efforts to a more generic OpenAPI spec based MCP: https://github.com/allen-munsch/yas-mcp
+> 
+> Additionally, there is actually an official beta release by prefect over here: https://pypi.org/project/prefect-mcp/
+
+
 # Prefect MCP Server
 
 A Model Context Protocol (MCP) server implementation for [Prefect](https://www.prefect.io/), enabling AI assistants to interact with Prefect through natural language.
